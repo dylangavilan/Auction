@@ -11,8 +11,9 @@ function App() {
   const [wallet, setWallet] = useState();
   const [highestBid, sethighestBid] = useState();
   const [reservePrice, setReservePrice] = useState();
-  const [bid, setBid] = useState("");
+  const [bid, setBid] = useState("0.1");
   const [contract, setContract] = useState();
+
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
@@ -36,12 +37,15 @@ function App() {
     await connectWallet();
   };
   const initBid = async () => {
-    return await contract.createBid(nftAddress, contractAddress, bid);
+    return await contract.createBid(nftAddress, tokenId, bid);
   };
   useEffect(() => {
     if (window.ethereum) {
       /* only if metamask injected in browser */
       init();
+      window.ethereum.on("chainChanged", () => {
+        window.location.reload();
+      });
     }
   }, []);
   console.log(bid);
