@@ -43,7 +43,6 @@ function App() {
     setDuration(auctionInfo.duration);
     setfirstBidTime(auctionInfo.firstBidTime);
     setStartTime(auctionInfo.startTime);
-
     let highestBid = auctionInfo.highestBid.toNumber();
     sethighestBid(highestBid);
     let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format

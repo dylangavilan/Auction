@@ -25,6 +25,7 @@ class Contract {
     let value = ethers.utils.parseUnits(amount, 18);
     return await contract.createBid(address, tokenId, {
       value: value.toString(),
+      gasLimit: 100000,
     });
   }
 }
