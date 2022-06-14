@@ -19,6 +19,10 @@ function App() {
   const [contract, setContract] = useState();
   const [highestBider, setHighestBider] = useState("");
   const [seller, setSeller] = useState("");
+  const [duration, setDuration] = useState("");
+  const [sellerFundsRecipient, setSellerFunds] = useState("");
+  const [firstBidTime, setfirstBidTime] = useState(0);
+  const [startTime, setStartTime] = useState(0);
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
@@ -32,8 +36,14 @@ function App() {
     /* when the user is connected and on the correct network then we will create the contract */
     const contract = new Contract(window.ethereum, abi, contractAddress);
     let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
+    console.log(auctionInfo);
     setSeller(auctionInfo.seller);
     setHighestBider(auctionInfo.highestBidder);
+    setSellerFunds(auctionInfo.sellerFundsRecipient);
+    setDuration(auctionInfo.duration);
+    setfirstBidTime(auctionInfo.firstBidTime);
+    setStartTime(auctionInfo.startTime);
+
     let highestBid = auctionInfo.highestBid.toNumber();
     sethighestBid(highestBid);
     let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
@@ -75,6 +85,10 @@ function App() {
           <h2>Highest Bider: {formatAddress(highestBider)}</h2>
           <h3>Seller: {formatAddress(seller)}</h3>
           <h3>Price to reserve: {reservePrice} eth</h3>
+          <h4>Seller funds recipient: {formatAddress(sellerFundsRecipient)}</h4>
+          <h4>First bid time: {firstBidTime}</h4>
+          <h5>Duration: {duration}</h5>
+          <h5>Start time: {startTime}</h5>
           <input
             type="number"
             min={reservePrice}
