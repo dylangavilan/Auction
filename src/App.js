@@ -36,7 +36,7 @@ function App() {
     await connectWallet();
   };
   const initBid = async () => {
-    return await contract.createBid(nftAddress, contractAddress, bid);
+    return await contract.createBid(nftAddress, tokenId, bid);
   };
   useEffect(() => {
     if (window.ethereum) {
