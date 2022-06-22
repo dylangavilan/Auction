@@ -1,0 +1,11 @@
+.group {
+  width: 60%;
+  margin: auto;
+}
+.container {
+  display: flex;
+  justify-content: space-between;
+}
+.history {
+  margin-right: 0.4rem;
+}

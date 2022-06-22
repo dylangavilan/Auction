@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import abi from "./abi.json";
+import "./App.css";
 import { Contract } from "./utils/contract";
 import {
   checkIfWalletIsConnected,
   connectWallet,
   formatAddress,
 } from "./utils/utils";
-import { formatEther } from "ethers/lib/utils";
+import { formatEther, Interface } from "ethers/lib/utils";
 // import rinkebyZoraAddresses from "@zoralabs/v3/dist/addresses/4.json"; // Mainnet addresses, 4.json would be Rinkeby Testnet
 // import { IERC721__factory } from "@zoralabs/v3/dist/typechain/factories/IERC721__factory";
 // import { IERC20__factory } from "@zoralabs/v3/dist/typechain/factories/IERC20__factory";
@@ -17,7 +18,6 @@ function App() {
   const tokenId = 34;
   const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42";
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
-
   const [wallet, setWallet] = useState("");
   const [highestBid, sethighestBid] = useState();
   const [reservePrice, setReservePrice] = useState();
@@ -29,6 +29,8 @@ function App() {
   const [sellerFundsRecipient, setSellerFunds] = useState("");
   const [firstBidTime, setfirstBidTime] = useState(0);
   const [startTime, setStartTime] = useState(0);
+  const [history, setHistory] = useState([]);
+
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
@@ -42,14 +44,30 @@ function App() {
     /* when the user is connected and on the correct network then we will create the contract */
     const contract = new Contract(window.ethereum, abi, contractAddress);
     let observer = contract.create();
-
-    observer.on("AuctionBid", (addressToken, tokenId) => {
-      console.log("Event auction bid: ");
-      console.log("addressToken: ", addressToken);
-      console.log("tokenId: ", tokenId.toNumber());
-      // console.log("firstBid: ", firstBid);
-      // console.log("extended: ", extended);
-      // console.log("auction: ", auction);
+    const get = () => {
+      let topic = observer.filters.AuctionBid(nftAddress, tokenId, null);
+      let filterLog = {
+        fromBlock: 0,
+        toBlock: "latest",
+        topics: topic.topics,
+      };
+      let provider = contract.provider();
+      let iface = new Interface(abi);
+      provider.getLogs(filterLog).then((logList) => {
+        let events = logList.map((log) => iface.parseLog(log));
+        let x = [];
+        events.forEach((el) => {
+          x.push({
+            wallet: el.args.auction[4],
+            bid: formatEther(el.args.auction[3]),
+          });
+        });
+        setHistory(x);
+      });
+    };
+    get();
+    observer.on("AuctionBid", () => {
+      get();
     });
     let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
     setSeller(auctionInfo.seller);
@@ -68,7 +86,8 @@ function App() {
     await connectWallet();
   };
   const initBid = async () => {
-    return await contract.createBid(nftAddress, tokenId, bid);
+    const tx = await contract.createBid(nftAddress, tokenId, bid);
+    tx.wait();
   };
   useEffect(() => {
     if (window.ethereum) {
@@ -94,7 +113,7 @@ function App() {
         ) /*to show the button only when user is not connected */
       }
       {wallet && (
-        <div>
+        <div className="group">
           <h1>Highest Bid: {highestBid}</h1>
           <h2>Highest Bider: {formatAddress(highestBider)}</h2>
           <h3>Seller: {formatAddress(seller)}</h3>
@@ -113,6 +132,16 @@ function App() {
             }}
           />
           <button onClick={initBid}>Reserve</button>
+          <div className="container">
+            {history?.map((el) => {
+              return (
+                <div className="history">
+                  <h3>Wallet: {formatAddress(el.wallet)}</h3>
+                  <h4>Price: {el.bid}</h4>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
