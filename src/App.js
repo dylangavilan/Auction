@@ -65,22 +65,26 @@ function App() {
         setHistory(x);
       });
     };
+    const getData = async () => {
+      let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
+      setSeller(auctionInfo.seller);
+      setHighestBider(auctionInfo.highestBidder);
+      setSellerFunds(auctionInfo.sellerFundsRecipient);
+      setDuration(auctionInfo.duration);
+      setfirstBidTime(auctionInfo.firstBidTime);
+      setStartTime(auctionInfo.startTime);
+      let highestBid = formatEther(auctionInfo.highestBid);
+      sethighestBid(highestBid);
+      let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
+      setReservePrice(defaultPrice > highestBid ? defaultPrice : highestBid);
+      setContract(contract);
+    };
     get();
+    getData();
     observer.on("AuctionBid", () => {
       get();
+      getData();
     });
-    let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
-    setSeller(auctionInfo.seller);
-    setHighestBider(auctionInfo.highestBidder);
-    setSellerFunds(auctionInfo.sellerFundsRecipient);
-    setDuration(auctionInfo.duration);
-    setfirstBidTime(auctionInfo.firstBidTime);
-    setStartTime(auctionInfo.startTime);
-    let highestBid = formatEther(auctionInfo.highestBid);
-    sethighestBid(highestBid);
-    let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
-    setReservePrice(defaultPrice > highestBid ? defaultPrice : highestBid);
-    setContract(contract);
   };
   const connect = async () => {
     await connectWallet();
@@ -133,6 +137,7 @@ function App() {
           />
           <button onClick={initBid}>Reserve</button>
           <div className="container">
+            <h1>History bid</h1>
             {history?.map((el) => {
               return (
                 <div className="history">
