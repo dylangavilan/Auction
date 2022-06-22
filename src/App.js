@@ -7,11 +7,17 @@ import {
   formatAddress,
 } from "./utils/utils";
 import { formatEther } from "ethers/lib/utils";
+// import rinkebyZoraAddresses from "@zoralabs/v3/dist/addresses/4.json"; // Mainnet addresses, 4.json would be Rinkeby Testnet
+// import { IERC721__factory } from "@zoralabs/v3/dist/typechain/factories/IERC721__factory";
+// import { IERC20__factory } from "@zoralabs/v3/dist/typechain/factories/IERC20__factory";
+// import { ZoraModuleManager__factory } from "@zoralabs/v3/dist/typechain/factories/ZoraModuleManager__factory";
+
 function App() {
   const networkId = 4;
-  const tokenId = 4;
-  const nftAddress = "0xbe213eaa1ab245d9ab96ece663af82e2cf285bf0";
+  const tokenId = 34;
+  const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42";
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
+
   const [wallet, setWallet] = useState("");
   const [highestBid, sethighestBid] = useState();
   const [reservePrice, setReservePrice] = useState();
@@ -35,15 +41,24 @@ function App() {
     }
     /* when the user is connected and on the correct network then we will create the contract */
     const contract = new Contract(window.ethereum, abi, contractAddress);
+    let observer = contract.create();
+
+    observer.on("AuctionBid", (addressToken, tokenId) => {
+      console.log("Event auction bid: ");
+      console.log("addressToken: ", addressToken);
+      console.log("tokenId: ", tokenId.toNumber());
+      // console.log("firstBid: ", firstBid);
+      // console.log("extended: ", extended);
+      // console.log("auction: ", auction);
+    });
     let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
-    console.log(auctionInfo);
     setSeller(auctionInfo.seller);
     setHighestBider(auctionInfo.highestBidder);
     setSellerFunds(auctionInfo.sellerFundsRecipient);
     setDuration(auctionInfo.duration);
     setfirstBidTime(auctionInfo.firstBidTime);
     setStartTime(auctionInfo.startTime);
-    let highestBid = auctionInfo.highestBid.toNumber();
+    let highestBid = formatEther(auctionInfo.highestBid);
     sethighestBid(highestBid);
     let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
     setReservePrice(defaultPrice > highestBid ? defaultPrice : highestBid);

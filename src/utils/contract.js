@@ -20,6 +20,7 @@ class Contract {
     let auction = await contract.auctionForNFT(address, tokenId);
     return auction;
   }
+
   async createBid(address, tokenId, amount) {
     const contract = this.create();
     let value = ethers.utils.parseUnits(amount, 18);
