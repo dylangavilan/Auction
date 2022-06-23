@@ -15,8 +15,8 @@ import { formatEther, Interface } from "ethers/lib/utils";
 
 function App() {
   const networkId = 4;
-  const tokenId = 34;
-  const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42";
+  const tokenId = 135;
+  const nftAddress = "0x775B572e0CEB816625Af9779Bb686A8b47975876";
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
   const [wallet, setWallet] = useState("");
   const [highestBid, sethighestBid] = useState();
@@ -30,7 +30,7 @@ function App() {
   const [firstBidTime, setfirstBidTime] = useState(0);
   const [startTime, setStartTime] = useState(0);
   const [history, setHistory] = useState([]);
-
+  const [ended, setEnded] = useState(false);
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
@@ -68,6 +68,22 @@ function App() {
     const getData = async () => {
       let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
       setSeller(auctionInfo.seller);
+      if (auctionInfo.seller === "0x0000000000000000000000000000000000000000") {
+        let topic = observer.filters.AuctionEnded(nftAddress, tokenId, null);
+        let filterLog = {
+          fromBlock: 0,
+          toBlock: "latest",
+          topics: topic.topics,
+        };
+        let provider = contract.provider();
+        let iface = new Interface(abi);
+        provider.getLogs(filterLog).then((logList) => {
+          let events = logList.map((log) => iface.parseLog(log));
+          sethighestBid(formatEther(events[0].args.auction.highestBid));
+          setHighestBider(events[0].args.auction.highestBidder);
+        });
+        return setEnded(true);
+      }
       setHighestBider(auctionInfo.highestBidder);
       setSellerFunds(auctionInfo.sellerFundsRecipient);
       setDuration(auctionInfo.duration);
@@ -81,6 +97,11 @@ function App() {
     };
     get();
     getData();
+    observer.on("AuctionEnded", () => {
+      get();
+      getData();
+      setEnded(true);
+    });
     observer.on("AuctionBid", () => {
       get();
       getData();
@@ -118,24 +139,38 @@ function App() {
       }
       {wallet && (
         <div className="group">
-          <h1>Highest Bid: {highestBid}</h1>
-          <h2>Highest Bider: {formatAddress(highestBider)}</h2>
-          <h3>Seller: {formatAddress(seller)}</h3>
-          <h3>Price to reserve: {reservePrice} eth</h3>
-          <h4>Seller funds recipient: {formatAddress(sellerFundsRecipient)}</h4>
-          <h4>First bid time: {firstBidTime}</h4>
-          <h5>Duration: {duration}</h5>
-          <h5>Start time: {startTime}</h5>
-          <input
-            type="number"
-            min={reservePrice}
-            step="0.01"
-            defaultValue={reservePrice}
-            onChange={(e) => {
-              setBid(e.target.value);
-            }}
-          />
-          <button onClick={initBid}>Reserve</button>
+          {!ended ? (
+            <div>
+              {" "}
+              <h1>Highest Bid: {highestBid}</h1>
+              <h2>Highest Bider: {formatAddress(highestBider)}</h2>
+              <h3>Seller: {formatAddress(seller)}</h3>
+              <h3>Price to reserve: {reservePrice} eth</h3>
+              <h4>
+                Seller funds recipient: {formatAddress(sellerFundsRecipient)}
+              </h4>
+              <h4>First bid time: {firstBidTime}</h4>
+              <h5>Duration: {duration}</h5>
+              <h5>Start time: {startTime}</h5>
+              <input
+                type="number"
+                min={reservePrice}
+                step="0.01"
+                defaultValue={reservePrice}
+                onChange={(e) => {
+                  setBid(e.target.value);
+                }}
+              />
+              <button onClick={initBid}>Reserve</button>
+            </div>
+          ) : (
+            <div>
+              <h1>Auction ended</h1>
+              <h3>highestBid: {highestBid}</h3>
+              <h3>winner: {formatAddress(highestBider)}</h3>
+            </div>
+          )}
+
           <div className="container">
             <h1>History bid</h1>
             {history?.map((el) => {
