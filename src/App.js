@@ -17,8 +17,8 @@ import { ERC721 } from "./utils/erc721";
 
 function App() {
   const networkId = 4;
-  const tokenId = 135;
-  const nftAddress = "0x775B572e0CEB816625Af9779Bb686A8b47975876";
+  const tokenId = 33;
+  const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42 ";
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
   const [wallet, setWallet] = useState("");
   const [highestBid, sethighestBid] = useState();
@@ -33,6 +33,7 @@ function App() {
   const [startTime, setStartTime] = useState(0);
   const [history, setHistory] = useState([]);
   const [ended, setEnded] = useState(false);
+  const [ipfsData, setIpfsData] = useState("");
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
@@ -73,10 +74,7 @@ function App() {
       let erc721 = new ERC721(window.ethereum, nftAddress);
       erc721 = erc721.create();
       let ipfsData = await erc721.tokenURI(tokenId);
-      console.log(ipfsData);
-      // await axios.get(
-      //   "https://ipfs.io/ipfs/bafkreih72hdsnfwatrj3c7alplkkq3pnqwqe4kibyoikhs7y4xlnkwdkqy"
-      // );
+      setIpfsData(ipfsData);
       if (auctionInfo.seller === "0x0000000000000000000000000000000000000000") {
         let topic = observer.filters.AuctionEnded(nftAddress, tokenId, null);
         let filterLog = {
@@ -149,6 +147,7 @@ function App() {
       }
       {wallet && (
         <div className="group">
+          <h1>Metadata {ipfsData}</h1>
           {!ended ? (
             <div>
               {" "}
