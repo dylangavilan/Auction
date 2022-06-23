@@ -23,9 +23,10 @@ class Contract {
   async createBid(address, tokenId, amount) {
     const contract = this.create();
     let value = ethers.utils.parseUnits(amount, 18);
+
     return await contract.createBid(address, tokenId, {
       value: value.toString(),
-      gasLimit: 100000,
+      gasLimit: 200000,
     });
   }
 }
