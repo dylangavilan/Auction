@@ -8,6 +8,8 @@ import {
   formatAddress,
 } from "./utils/utils";
 import { formatEther, Interface } from "ethers/lib/utils";
+import { ERC721 } from "./utils/erc721";
+// import axios from "axios";
 // import rinkebyZoraAddresses from "@zoralabs/v3/dist/addresses/4.json"; // Mainnet addresses, 4.json would be Rinkeby Testnet
 // import { IERC721__factory } from "@zoralabs/v3/dist/typechain/factories/IERC721__factory";
 // import { IERC20__factory } from "@zoralabs/v3/dist/typechain/factories/IERC20__factory";
@@ -68,6 +70,13 @@ function App() {
     const getData = async () => {
       let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
       setSeller(auctionInfo.seller);
+      let erc721 = new ERC721(window.ethereum, nftAddress);
+      erc721 = erc721.create();
+      let ipfsData = await erc721.tokenURI(tokenId);
+      console.log(ipfsData);
+      // await axios.get(
+      //   "https://ipfs.io/ipfs/bafkreih72hdsnfwatrj3c7alplkkq3pnqwqe4kibyoikhs7y4xlnkwdkqy"
+      // );
       if (auctionInfo.seller === "0x0000000000000000000000000000000000000000") {
         let topic = observer.filters.AuctionEnded(nftAddress, tokenId, null);
         let filterLog = {
@@ -83,16 +92,17 @@ function App() {
           setHighestBider(events[0].args.auction.highestBidder);
         });
         return setEnded(true);
+      } else {
+        setHighestBider(auctionInfo.highestBidder);
+        setSellerFunds(auctionInfo.sellerFundsRecipient);
+        setDuration(auctionInfo.duration);
+        setfirstBidTime(auctionInfo.firstBidTime);
+        setStartTime(auctionInfo.startTime);
+        let highestBid = formatEther(auctionInfo.highestBid);
+        sethighestBid(highestBid);
+        let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
+        setReservePrice(defaultPrice > highestBid ? defaultPrice : highestBid);
       }
-      setHighestBider(auctionInfo.highestBidder);
-      setSellerFunds(auctionInfo.sellerFundsRecipient);
-      setDuration(auctionInfo.duration);
-      setfirstBidTime(auctionInfo.firstBidTime);
-      setStartTime(auctionInfo.startTime);
-      let highestBid = formatEther(auctionInfo.highestBid);
-      sethighestBid(highestBid);
-      let defaultPrice = formatEther(auctionInfo.reservePrice.toString()); //transform in eth format
-      setReservePrice(defaultPrice > highestBid ? defaultPrice : highestBid);
       setContract(contract);
     };
     get();
