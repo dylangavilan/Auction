@@ -4,7 +4,7 @@
 }
 .container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
 }
 .history {
   margin-right: 0.4rem;

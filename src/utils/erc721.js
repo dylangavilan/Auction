@@ -15,5 +15,9 @@ class ERC721 {
   create() {
     return new ethers.Contract(this.contractAddress, this.abi, this.signer());
   }
+  async getUri(tokenId) {
+    let contract = this.create();
+    return await contract.tokenURI(tokenId);
+  }
 }
 export { ERC721 };

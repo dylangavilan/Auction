@@ -7,17 +7,12 @@ import {
   connectWallet,
   formatAddress,
 } from "./utils/utils";
-import { formatEther, Interface } from "ethers/lib/utils";
+import { formatEther } from "ethers/lib/utils";
 import { ERC721 } from "./utils/erc721";
-// import axios from "axios";
-// import rinkebyZoraAddresses from "@zoralabs/v3/dist/addresses/4.json"; // Mainnet addresses, 4.json would be Rinkeby Testnet
-// import { IERC721__factory } from "@zoralabs/v3/dist/typechain/factories/IERC721__factory";
-// import { IERC20__factory } from "@zoralabs/v3/dist/typechain/factories/IERC20__factory";
-// import { ZoraModuleManager__factory } from "@zoralabs/v3/dist/typechain/factories/ZoraModuleManager__factory";
 
 function App() {
   const networkId = 4;
-  const tokenId = 33;
+  const tokenId = 32;
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
   const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42";
   const [wallet, setWallet] = useState("");
@@ -46,49 +41,39 @@ function App() {
     }
     /* when the user is connected and on the correct network then we will create the contract */
     const contract = new Contract(window.ethereum, abi, contractAddress);
-    let observer = contract.create();
-    const get = () => {
-      let topic = observer.filters.AuctionBid(nftAddress, tokenId, null);
+    const get = async () => {
+      let topic = contract.getTopics(nftAddress, tokenId);
       let filterLog = {
         fromBlock: 0,
         toBlock: "latest",
         topics: topic.topics,
       };
-      let provider = contract.provider();
-      let iface = new Interface(abi);
-      provider.getLogs(filterLog).then((logList) => {
-        let events = logList.map((log) => iface.parseLog(log));
-        let x = [];
-        events.forEach((el) => {
-          x.push({
-            wallet: el.args.auction[4],
-            bid: formatEther(el.args.auction[3]),
-          });
+      let logs = await contract.getLogs(filterLog);
+      let x = [];
+      logs.forEach((el) => {
+        x.push({
+          wallet: el.args.auction[4],
+          bid: formatEther(el.args.auction[3]),
         });
-        setHistory(x);
       });
+      setHistory(x);
     };
     const getData = async () => {
       let auctionInfo = await contract.auctionForNFT(nftAddress, tokenId);
       setSeller(auctionInfo.seller);
       let erc721 = new ERC721(window.ethereum, nftAddress);
-      erc721 = erc721.create();
-      let ipfsData = await erc721.tokenURI(tokenId);
+      let ipfsData = await erc721.getUri(tokenId);
       setIpfsData(ipfsData);
       if (auctionInfo.seller === "0x0000000000000000000000000000000000000000") {
-        let topic = observer.filters.AuctionEnded(nftAddress, tokenId, null);
+        let topic = contract.getTopics(nftAddress, tokenId);
         let filterLog = {
           fromBlock: 0,
           toBlock: "latest",
           topics: topic.topics,
         };
-        let provider = contract.provider();
-        let iface = new Interface(abi);
-        provider.getLogs(filterLog).then((logList) => {
-          let events = logList.map((log) => iface.parseLog(log));
-          sethighestBid(formatEther(events[0].args.auction.highestBid));
-          setHighestBider(events[0].args.auction.highestBidder);
-        });
+        let logs = await contract.getLogs(filterLog);
+        sethighestBid(formatEther(logs[0].args.auction.highestBid));
+        setHighestBider(logs[0].args.auction.highestBidder);
         return setEnded(true);
       } else {
         setHighestBider(auctionInfo.highestBidder);
@@ -105,15 +90,8 @@ function App() {
     };
     get();
     getData();
-    observer.on("AuctionEnded", () => {
-      get();
-      getData();
-      setEnded(true);
-    });
-    observer.on("AuctionBid", () => {
-      get();
-      getData();
-    });
+    contract.checkAuctionEnd(get, getData, setEnded);
+    contract.checkAuctionBid(get, getData);
   };
   const connect = async () => {
     await connectWallet();
@@ -131,6 +109,7 @@ function App() {
       });
     }
   }, []);
+  console.log(ended);
   return (
     <div>
       {
@@ -147,14 +126,15 @@ function App() {
       }
       {wallet && (
         <div className="group">
-          <h1>Metadata {ipfsData}</h1>
+          <h3>Metadata </h3>
+          <p>{ipfsData}</p>
           {!ended ? (
             <div>
               {" "}
-              <h1>Highest Bid: {highestBid}</h1>
-              <h2>Highest Bider: {formatAddress(highestBider)}</h2>
-              <h3>Seller: {formatAddress(seller)}</h3>
-              <h3>Price to reserve: {reservePrice} eth</h3>
+              <h4>Highest Bid: {highestBid}</h4>
+              <h4>Highest Bider: {formatAddress(highestBider)}</h4>
+              <h4>Seller: {formatAddress(seller)}</h4>
+              <h4>Price to reserve: {reservePrice} eth</h4>
               <h4>
                 Seller funds recipient: {formatAddress(sellerFundsRecipient)}
               </h4>
@@ -180,8 +160,8 @@ function App() {
             </div>
           )}
 
+          <h1>History bid</h1>
           <div className="container">
-            <h1>History bid</h1>
             {history?.map((el) => {
               return (
                 <div className="history">
