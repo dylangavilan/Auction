@@ -11,14 +11,14 @@ import { formatEther } from "ethers/lib/utils";
 import { ERC721 } from "./utils/erc721";
 
 function App() {
-  const networkId = 4;
-  const tokenId = 32;
-  const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994";
-  const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42";
+  const networkId = 4; //rinkeby
+  const tokenId = 31;
+  const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994"; //address contract for auctions
+  const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42"; //address at token
   const [wallet, setWallet] = useState("");
   const [highestBid, sethighestBid] = useState();
   const [reservePrice, setReservePrice] = useState();
-  const [bid, setBid] = useState("0.1");
+  const [bid, setBid] = useState();
   const [contract, setContract] = useState();
   const [highestBider, setHighestBider] = useState("");
   const [seller, setSeller] = useState("");
@@ -29,6 +29,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [ended, setEnded] = useState(false);
   const [ipfsData, setIpfsData] = useState("");
+
   const init = async () => {
     let connected = await checkIfWalletIsConnected();
     if (!connected) return; //if not connected stop the process to avoid bugs
