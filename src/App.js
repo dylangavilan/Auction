@@ -12,7 +12,7 @@ import { ERC721 } from "./utils/erc721";
 
 function App() {
   const networkId = 4; //rinkeby
-  const tokenId = 31;
+  const tokenId = 30;
   const contractAddress = "0x3feaf4c06211680e5969a86adb1423fc8ad9e994"; //address contract for auctions
   const nftAddress = "0x5ddd592791d0c2260d6105879c1ff17ad74e1d42"; //address at token
   const [wallet, setWallet] = useState("");
